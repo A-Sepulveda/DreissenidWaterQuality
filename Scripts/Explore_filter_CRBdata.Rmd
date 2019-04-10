@@ -6,9 +6,9 @@ output: html_notebook
 knitr::opts_chunk$set(echo = TRUE)
 ``` 
 
-Set working directory and libraries
+Load libraries
 ```{r echo=T, results='hide'}
-setwd("D:/Sepulveda_USGS/BOR_mussel_waterquality/R scripts")
+
 packs <- c('tidyverse', 'dataRetrieval', 'reshape2', 'scales', 'stringr',
            'leaflet', 'knitr', 'lubridate')
 lapply(packs, require, character.only = T)
@@ -17,8 +17,8 @@ lapply(packs, require, character.only = T)
 1. Load data from files
 2. Simple cleanup of the data
 ```{r echo=T, results='hide'}
-#To load already saved data
-CRB_qw = readRDS("CRB_qw_040519.rds") %>% 
+#To load already saved data, find file in directory and click on it
+CRB_qw = CRB_qw_040519 %>% 
   filter(ActivityMediaName == "Water") %>% 
     filter(!is.na(ResultMeasureValue)) %>%  # get rid of NA values
     mutate(ResultMeasure.MeasureUnitCode = 
@@ -29,7 +29,7 @@ CRB_qw = readRDS("CRB_qw_040519.rds") %>%
     mutate(ResultMeasure.MeasureUnitCode = 
              str_trim(ResultMeasure.MeasureUnitCode, side = "both")   #get rid of white spaces
           )
-siteInfo=readRDS("CRB_qw_040519_siteInfo.rds")
+siteInfo=CRB_qw_siteinfo_040519
 
 ```
 
@@ -68,8 +68,8 @@ ggplot(CRB_pH, aes(x = ResultMeasure.MeasureUnitCode, y = ResultMeasureValue))+
   geom_boxplot()
 ```
   
+  
 That's awful. Let's first limit pH values to 0 -14
-
 ```{r}
 CRB_pH = as_tibble(CRB_qw)%>% 
     filter(CharacteristicName == "pH") %>% 
@@ -80,8 +80,8 @@ ggplot(CRB_pH, aes(x = ResultMeasure.MeasureUnitCode, y = ResultMeasureValue))+
 
 ```
 
-Better. Let's assume that these values are correct, but the units are wrong
 
+Better. Let's assume that these values are correct, but the units are wrong
 ```{r}
 CRB_pH = as_tibble(CRB_qw)%>% 
     filter(CharacteristicName == "pH") %>% 
@@ -114,7 +114,6 @@ CRB_pH = CRB_qw %>%
 
    
 When are pH samples collected? Most are in summer... do we want to restrict pH to non-winter (i.e., mussel growing season)?
-
 ```{r}
 ggplot(CRB_pH, aes(x = Month))+
   geom_histogram(stat="count")
@@ -122,7 +121,6 @@ ggplot(CRB_pH, aes(x = Month))+
 ```
 
 How many samples have been collected at each site? Let's group the data by site and calculate some summaries 
-   
 ```{r, eval=FALSE}
 CRB_pH_summ = CRB_pH%>% 
 group_by(MonitoringLocationIdentifier) %>%
@@ -144,7 +142,7 @@ ggplot(CRB_pH_summ, aes(x = count, y = stdev))+
 ```
    
    
-Wow, some sites have been visited more than 1000 times.  What are these sites? Seems to be a mix of long-term monitoring and continuous sondes.  
+Wow, some sites have been visited more than 1000 times.  What are these sites? Seems to be a mix of long-term monitoring and continuous sondes. 
 ```{r}
 CRB_pH_summ %>% 
   arrange(desc(count)) %>% 
@@ -210,7 +208,7 @@ leaflet(data=CRB_pH) %>%
 
 
   
-Time to explore the calcium data
+Explore the calcium data
 ```{r}
 CRB_Ca = CRB_qw %>% 
     filter(CharacteristicName == "Calcium")
