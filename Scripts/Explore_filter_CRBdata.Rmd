@@ -114,9 +114,54 @@ ggplot(CRB_pH, aes(x = Month))+
 
 ```
 
+Thinking more about how to filter pH data... does month of sampling matter? 
+Mean stdev per month doesn't change much for the sites where 12 months data are available.  
+```{r warning=FALSE}
+CRB_pH_months= CRB_qw %>% 
+  filter(CharacteristicName == "pH") %>%
+  filter(!(ResultMeasureValue > 14|ResultMeasureValue <0)) %>% 
+  mutate(ResultMeasure.MeasureUnitCode, ResultMeasure.MeasureUnitCode =   
+           ifelse(ResultMeasure.MeasureUnitCode %in%
+                    c("deg C", "NTU", "nu", "%", "mg/l",
+                      "Mole/l", "std units", "ug/l", "units/cm"), "None",
+                  ResultMeasure.MeasureUnitCode)) %>%
+  mutate(Month = month(ActivityStartDate, label=TRUE)) %>% 
+  group_by(MonitoringLocationIdentifier) %>%
+  mutate(count = n_distinct(Month)) %>% #count how many unique months with pH data at a site
+  filter(count == 12) %>% #limit data to just sites where data was collected every month
+  group_by(MonitoringLocationIdentifier, Month) %>%  #summarize data at each site for each month
+  summarise(max = max(ResultMeasureValue, na.rm = TRUE),
+            mean = mean(ResultMeasureValue, na.rm = TRUE),
+            stdev = sd(ResultMeasureValue, na.rm = TRUE))
+  
+
+ggplot(CRB_pH_months, aes(x = Month, y = stdev))+
+  geom_boxplot()
+
+
+```
+
+But moving forward, let's code June, July, August and September samples as "High Quality" and all others as "Low Quality" 
+```{r}
+CRB_pH_monthsquality= CRB_qw %>% 
+  filter(CharacteristicName == "pH") %>%
+  filter(!(ResultMeasureValue > 14|ResultMeasureValue <0)) %>% 
+  mutate(ResultMeasure.MeasureUnitCode, ResultMeasure.MeasureUnitCode =   
+           ifelse(ResultMeasure.MeasureUnitCode %in%
+                    c("deg C", "NTU", "nu", "%", "mg/l",
+                      "Mole/l", "std units", "ug/l", "units/cm"), "None",
+                  ResultMeasure.MeasureUnitCode)) %>%
+  mutate(Month = month(ActivityStartDate, label=TRUE)) %>% 
+  mutate(MonthQuality = ifelse(Month %in% c("Jun", "Jul", "Aug", "Sep"), "HighQuality", "LowQuality"))
+```
+
+
+
+
 How many samples have been collected at each site? Let's group the data by site and calculate some summaries 
 ```{r, eval=FALSE}
-CRB_pH_summ = CRB_pH%>% 
+CRB_pH_summ = CRB_pH_monthsquality%>%
+  filter(MonthQuality == "HighQuality") %>% 
 group_by(MonitoringLocationIdentifier) %>%
       summarise(count=n(),
                 start=min(ActivityStartDate),
@@ -157,12 +202,15 @@ CRB_pH = CRB_qw %>%
                            "Mole/l", "std units", "ug/l", "units/cm"), "None",
                     ResultMeasure.MeasureUnitCode)) %>%
     mutate(Month = month(ActivityStartDate, label=TRUE)) %>% 
-    group_by(MonitoringLocationIdentifier) %>%
+    mutate(MonthQuality = ifelse(Month %in% c("Jun", "Jul", "Aug", "Sep"), "HighQuality", "LowQuality")) %>% 
+    filter(MonthQuality == "HighQuality") %>%
+  group_by(MonitoringLocationIdentifier) %>%
       summarise(count=n(),
                 start=min(ActivityStartDate),
                 end=max(ActivityStartDate),
                 max = max(ResultMeasureValue, na.rm = TRUE),
-                mean = mean(ResultMeasureValue, na.rm = TRUE)) %>% 
+                mean = mean(ResultMeasureValue, na.rm = TRUE),
+                stdev = sd(ResultMeasureValue, na.rm = TRUE)) %>% 
     left_join(siteInfo, by = "MonitoringLocationIdentifier") # join location information
 
 ```
@@ -191,7 +239,7 @@ phMap = leaflet(data=CRB_pH) %>%
       addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
       addCircleMarkers(~dec_lon_va, ~dec_lat_va,
                        fillColor = ~risk.pal(max),
-                       radius = ~sizes,
+                       radius = 2,  # to make size a function of count replace with ~sizes
                        fillOpacity = 0.8, opacity = 0.8,stroke=FALSE,
                        popup=~station_nm) %>%
       addLegend(position = 'bottomleft',
@@ -208,6 +256,9 @@ phMap = leaflet(data=CRB_pH) %>%
 phMap
 
 ```
+
+
+
 
 
   
@@ -338,6 +389,8 @@ CRB_Ca = CRB_qw %>%
   filter(ResultMeasure.MeasureUnitCode =="mg/l") %>%
   filter(!ResultMeasureValue > quantile(ResultMeasureValue, 0.975)) %>% 
   mutate(Month = month(ActivityStartDate, label=TRUE)) %>% 
+  mutate(MonthQuality = ifelse(Month %in% c("Jun", "Jul", "Aug", "Sep"), "HighQuality", "LowQuality")) %>% 
+    filter(MonthQuality == "HighQuality") %>%  #limit data to summer months
   group_by(MonitoringLocationIdentifier) %>%
       summarise(count=n(),
                 start=min(ActivityStartDate),
@@ -368,7 +421,7 @@ CaMap = leaflet(data=CRB_Ca) %>%
       addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  #This is cool... https://rstudio.github.io/leaflet/basemaps.html
       addCircleMarkers(~dec_lon_va,~dec_lat_va,
                        fillColor = ~risk.pal(max),
-                       radius = ~sizes,
+                       radius = 2,  # to make size a function of count replace with ~sizes
                        fillOpacity = 0.8, opacity = 0.8,stroke=FALSE,
                        popup=~station_nm) %>%
       addLegend(position = 'bottomleft',
