@@ -1,0 +1,39 @@
+---
+title: "Script to download water quality data using library(dataRetrieval)"
+output: html_notebook
+---
+
+Load libraries
+```{r echo=T, results='hide'}
+
+packs <- c('tidyverse', 'dataRetrieval', 'reshape2', 'scales', 'stringr',
+           'leaflet', 'knitr', 'lubridate')
+lapply(packs, require, character.only = T)
+```
+
+
+To download new data, use dataretrieval package to download waterquality data from https://www.waterqualitydata.us/
+```{r}
+CRB_qw = readWQPdata(huc = "17",  # CRB is HUC 17
+                     siteType = c("Lake, Reservoir, Impoundment","Stream"),
+                     characteristicName=c("Calcium", "pH")) 
+siteInfo <- attr(CRB_qw, "siteInfo")
+
+CRB_qw_cleaned = CRB_qw %>%
+    filter(ActivityMediaName == "Water") %>% 
+    filter(!is.na(ResultMeasureValue)) %>%  # get rid of NA values
+    mutate(ResultMeasure.MeasureUnitCode = 
+             str_trim(ResultMeasure.MeasureUnitCode, side = "both")   #get rid of white spaces
+          ) 
+    filter(ActivityMediaName == "Water") %>% 
+    filter(!is.na(ResultMeasureValue)) %>%  # get rid of NA values
+    mutate(ResultMeasure.MeasureUnitCode = 
+             str_trim(ResultMeasure.MeasureUnitCode, side = "both")   #get rid of white spaces
+          )
+
+#Save these data as a R data file, since it take so long to download
+#File date indicates when data where downloaded
+saveRDS(CRB_qw, "CRB_qw_040519.rds")
+saveRDS(siteInfo, "CRB_qw_040519_siteInfo.rds")
+
+
