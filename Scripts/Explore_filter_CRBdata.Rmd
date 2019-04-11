@@ -186,7 +186,7 @@ Finally, plot it spatially via leaflet
 ```{r}
 library(mapview)
 
-leaflet(data=CRB_pH) %>% 
+phMap = leaflet(data=CRB_pH) %>% 
       #addTiles() %>% for simple openstreet basemap
       addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  
       addCircleMarkers(~dec_lon_va, ~dec_lat_va,
@@ -203,7 +203,9 @@ leaflet(data=CRB_pH) %>%
   addMouseCoordinates(style = "basic") %>% 
   setView(lng = -118.3,
           lat = 45.6,
-          zoom = 5.5)
+          zoom = 5.45)
+
+phMap
 
 ```
 
@@ -357,12 +359,11 @@ rad <-3*seq(1,4,length.out = 16)
 CRB_Ca$sizes <- rad[as.numeric(cut(CRB_Ca$count, breaks=16))]
 
 
-
 ```
 
 Finally, plot it spatially via leaflet
 ```{r}
-leaflet(data=CRB_Ca) %>% 
+CaMap = leaflet(data=CRB_Ca) %>% 
       #addTiles() %>% for simple openstreet basemap
       addProviderTiles(providers$Esri.NatGeoWorldMap) %>%  #This is cool... https://rstudio.github.io/leaflet/basemaps.html
       addCircleMarkers(~dec_lon_va,~dec_lat_va,
@@ -380,6 +381,14 @@ leaflet(data=CRB_Ca) %>%
   setView(lng = -118.3,
           lat = 45.6,
           zoom = 5.45)
+
+CaMap
+```
+
+
+My attempt to look at both the pH and Ca maps
+```{r}
+latticeview(CaMap, phMap)
 ```
 
 
