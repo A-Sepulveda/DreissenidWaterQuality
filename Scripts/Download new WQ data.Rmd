@@ -3,10 +3,13 @@ title: "Script to download water quality data using library(dataRetrieval)"
 output: html_notebook
 ---
 
+Link to paper introducing the water quality data portal: https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2016WR019993
+
+
 Load libraries
 ```{r echo=T, results='hide'}
 
-packs <- c('tidyverse', 'dataRetrieval', 'reshape2', 'scales', 'stringr',
+packs <- c('readr', 'tidyverse', 'dataRetrieval', 'reshape2', 'scales', 'stringr',
            'leaflet', 'knitr', 'lubridate')
 lapply(packs, require, character.only = T)
 ```
@@ -36,4 +39,36 @@ CRB_qw_cleaned = CRB_qw %>%
 saveRDS(CRB_qw, "CRB_qw_040519.rds")
 saveRDS(siteInfo, "CRB_qw_040519_siteInfo.rds")
 
+```
+
+
+WaterTemp data
+```{r}
+CRB_Laketemp = readWQPdata(huc = "17",  # CRB is HUC 17
+                     siteType = c("Lake, Reservoir, Impoundment"),
+                     characteristicName=c("Temperature, water", "Temperature, water, deg F")) 
+
+CRB_Streamtemp = readWQPdata(huc = "17",  # CRB is HUC 17
+                     siteType = c("Stream"),
+                     characteristicName=c("Temperature, water", "Temperature, water, deg F")) 
+  
+
+Laketemp_siteInfo <- attr(CRB_Laketemp, "siteInfo")
+Streamtemp_siteInfo <- attr(CRB_Streamtemp, "siteInfo")
+```
+
+
+
+Save files
+```{r}
+setwd("D:/Sepulveda_USGS/BOR_mussel_waterquality/DreissenidWaterQuality/Data/raw")
+saveRDS(CRB_Laketemp, "CRB_Laketemp_041219.rds")
+saveRDS(Laketemp_siteInfo, "CRB_Laketemp_041219_siteInfo.rds")
+```
+
+setwd("D:/Sepulveda_USGS/BOR_mussel_waterquality/DreissenidWaterQuality/Data/raw")
+saveRDS(CRB_Laketemp, "CRB_Laketemp_041219.rds")
+saveRDS(Laketemp_siteInfo, "CRB_Laketemp_041219_siteInfo.rds")
+
+```
 
