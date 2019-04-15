@@ -22,7 +22,10 @@ Left_join, which returns all rows from x (CRB_Ca), and all columns where x and y
 
 Lake_temp_water = left_join(CRB_Ca, CRB_Laketemp_reduced, by = c("MonitoringLocationIdentifier", "start"="Waterstart")) %>% 
   mutate(Ca_max = max, Ca_mean = mean) %>% 
-  select(Ca_max, Ca_mean, Watermax, Watermean, start, site_no.x, MonitoringLocationIdentifier, dec_lat_va.x, dec_lon_va.x, station_nm.y)
+  select(Ca_max, Ca_mean, Watermax, Watermean, start, site_no.x, MonitoringLocationIdentifier,
+         dec_lat_va.x, dec_lon_va.x, station_nm.y, StateCode.x)
+  
+  
 
 
 ```
@@ -47,7 +50,33 @@ Lake_temp_water_unknownQ = Lake_temp_water_quality %>%
 ```
 
 
-Map it!
+Summarize high, low and unknown data quality. There seems to be potential for wrong state codes and many sites with no state codes. See https://stackoverflow.com/questions/8751497/latitude-longitude-coordinates-to-state-code-in-r if we want to fix state codes based on lat/long
+```{r}
+unique(Lake_temp_water_quality$StateCode.x)
+
+Lake_temp_water_quality_summ = as_tibble(Lake_temp_water_quality) %>% 
+  mutate(State = as.factor(StateCode.x)) %>% 
+  mutate(State = if_else(State == "16", "Idaho",
+                 if_else(State == "32", "Nevada",
+                 if_else(State == "41", "Oregon",
+                 if_else(State == "53", "Washington",
+                 if_else(State == "56", "Wyoming",
+                 if_else(State == "30", "Montana",
+                 if_else(State == "6", "California",
+                 if_else(State == "49", "Utah", "Unknown"
+                 )))))))))
+
+table(Lake_temp_water_quality_summ$TempQuality, Lake_temp_water_quality_summ$State)
+  
+
+
+
+```
+
+
+
+
+Map it!  We need to go through and clean some of these data since not all are in the CRB.  HUC 17 = Pacific Northwest Region, not just CRB. 
 ```{r}
 
 col_types <- c("darkblue","pink", "orange","red")  
@@ -119,7 +148,6 @@ CaMap_UnknownQ = leaflet(data=Lake_temp_water_unknownQ) %>%
 latticeview(CaMap_LowQuality, CaMap_HighQuality, CaMap_UnknownQ)
 
 ```
-
 
 
 
