@@ -7,7 +7,7 @@ output: html_notebook
 *Load libraries*
 ```{r echo=T, results='hide'}
 
-packs <- c('readr', 'tidyverse', 'dataRetrieval', 'lubridate', 'mapview')
+packs <- c('readr', 'dataRetrieval', 'tidyverse', 'lubridate', 'leaflet', 'mapview')
 lapply(packs, require, character.only = T)
 ```
 
@@ -22,7 +22,7 @@ siteInfo <- attr(CRB_qw, "siteInfo")
 #Save these data as a R data file, since it take so long to download
 #File date indicates when data where downloaded
 
-saveRDS(CRB_qw, "CRB_qw_040519.rds")
+saveRDS(CRB_qw, "CRB_qw_040519.rds")  #filenumbers indicate date of download
 saveRDS(siteInfo, "CRB_qw_040519_siteInfo.rds")
 
 CRB_qw_cleaned = readRDS("D:/Sepulveda_USGS/BOR_mussel_waterquality/DreissenidWaterQuality/Data/raw/CRB_qw_040519.rds")%>%
